@@ -36,7 +36,7 @@ from decimal import Decimal
 from hashlib import sha256
 
 from electrumx.lib import util
-from electrumx.lib.hash import Base58, double_sha256, hash_to_hex_str
+from electrumx.lib.hash import Base58, double_sha256, double_sha512_256, hash_to_hex_str
 from electrumx.lib.hash import HASHX_LEN
 from electrumx.lib.script import ScriptPubKey
 import electrumx.lib.tx as lib_tx
@@ -55,23 +55,23 @@ class CoinError(Exception):
 class Coin:
     '''Base class of coin hierarchy.'''
 
-    SHORTNAME = "BSV"
+    SHORTNAME = "RXD"
     NET = "mainnet"
     REORG_LIMIT = 200
     # Not sure if these are coin-specific
     RPC_URL_REGEX = re.compile('.+@(\\[[0-9a-fA-F:]+\\]|[^:]+)(:[0-9]+)?')
     VALUE_PER_COIN = 100000000
     SESSIONCLS = ElectrumX
-    DEFAULT_MAX_SEND = 1000000
+    DEFAULT_MAX_SEND = 10000000
     DESERIALIZER = lib_tx.Deserializer
     DAEMON = daemon.Daemon
     BLOCK_PROCESSOR = block_proc.BlockProcessor
     P2PKH_VERBYTE = bytes.fromhex("00")
     P2SH_VERBYTES = [bytes.fromhex("05")]
-    RPC_PORT = 8332
-    GENESIS_HASH = ('000000000019d6689c085ae165831e93'
-                    '4ff763ae46a2a6c172b3f1b60a8ce26f')
-    GENESIS_ACTIVATION = 100_000_000
+    RPC_PORT = 7332
+    GENESIS_HASH = ('0000000065d8ed5d8be28d6876b3ffb6'
+                    '60ac2a6c0ca59e437e1f7a6f4e003fb4')
+    GENESIS_ACTIVATION = 0
     # Peer discovery
     PEER_DEFAULT_PORTS = {'t': '50001', 's': '50002'}
     PEERS = []
@@ -170,7 +170,7 @@ class Coin:
     @classmethod
     def header_hash(cls, header):
         '''Given a header return hash'''
-        return double_sha256(header)
+        return double_sha512_256(header)
 
     @classmethod
     def header_prevhash(cls, header):
@@ -194,54 +194,62 @@ class Coin:
         return Decimal(value) / cls.VALUE_PER_COIN
 
 
-class BitcoinSV(Coin):
-    NAME = "BitcoinSV"
-    TX_COUNT = 267318795
-    TX_COUNT_HEIGHT = 557037
+class Radiant(Coin):
+    NAME = "Radiant"
+    TX_COUNT = 1
+    TX_COUNT_HEIGHT = 1
     TX_PER_BLOCK = 400
     PEERS = [
-        'electrumx.bitcoinsv.io s',
-        'satoshi.vision.cash s',
-        'sv.usebsv.com s t',
-        'sv.satoshi.io s t',
     ]
-    GENESIS_ACTIVATION = 620_538
+    GENESIS_ACTIVATION = 0
+    RPC_PORT = 7332
 
-
-class BitcoinTestnetMixin:
+class RadiantTestnetMixin:
     SHORTNAME = "XTN"
     NET = "testnet"
     P2PKH_VERBYTE = bytes.fromhex("6f")
     P2SH_VERBYTES = [bytes.fromhex("c4")]
     WIF_BYTE = bytes.fromhex("ef")
-    GENESIS_HASH = ('000000000933ea01ad0ee984209779ba'
-                    'aec3ced90fa3f408719526f8d77f4943')
+    GENESIS_HASH = ('000000002008a2f4a76b850a838ae084'
+                    '994c200dc2fd354f73102298fe063a91')
     REORG_LIMIT = 8000
-    TX_COUNT = 12242438
-    TX_COUNT_HEIGHT = 1035428
+    TX_COUNT = 1
+    TX_COUNT_HEIGHT = 1
     TX_PER_BLOCK = 21
-    RPC_PORT = 18332
+    RPC_PORT = 17332
     PEER_DEFAULT_PORTS = {'t': '51001', 's': '51002'}
 
-
-class BitcoinSVTestnet(BitcoinTestnetMixin, Coin):
-    '''Bitcoin Testnet for Bitcoin SV daemons.'''
-    NAME = "BitcoinSV"
+class RadiantTestnet(RadiantTestnetMixin, Coin):
+    '''Radiant Testnet for Radiant daemons.'''
+    GENESIS_HASH = ('000000002008a2f4a76b850a838ae084'
+                    '994c200dc2fd354f73102298fe063a91')
+    NAME = "RadiantTestnet"
     PEERS = [
-        'electrontest.cascharia.com t51001 s51002',
     ]
-    GENESIS_ACTIVATION = 1_344_302
+    GENESIS_ACTIVATION = 0
+    RPC_PORT = 17332 
 
-
-class BitcoinSVScalingTestnet(BitcoinSVTestnet):
+class RadiantTestnet4(RadiantTestnetMixin, Coin):
+    '''Radiant Testnet4 for Radiant daemons.'''
+    GENESIS_HASH = ('000000000d8ada264d16f87a590b2af3'
+                    '20cd3c7e3f9be5482163e830fd00aca2')
+    NAME = "RadiantTestnet4"
+    PEERS = [
+    ]
+    GENESIS_ACTIVATION = 0
+    RPC_PORT = 27332 
+# 
+class RadiantScalingTestnet(RadiantTestnet):
     NET = "scalingtest"
+    GENESIS_HASH = ('00000000ea7340a6e9ae28ad8ca95a65'
+                    '2c8da00ee7ea97e6cb42cd1558884c87')
     PEERS = [
-        'stn-server.electrumsv.io t51001 s51002',
     ]
-    TX_COUNT = 2015
-    TX_COUNT_HEIGHT = 5711
+    TX_COUNT = 1000
+    TX_COUNT_HEIGHT = 1000
     TX_PER_BLOCK = 5000
-    GENESIS_ACTIVATION = 14_896
+    GENESIS_ACTIVATION = 0
+    RPC_PORT = 37332 
 
     @classmethod
     def max_fetch_blocks(cls, height):
@@ -249,15 +257,21 @@ class BitcoinSVScalingTestnet(BitcoinSVTestnet):
             return 100
         return 3
 
-
-class BitcoinSVRegtest(BitcoinSVTestnet):
+class RadiantRegtest(RadiantTestnet):
     NET = "regtest"
-    GENESIS_HASH = ('0f9188f13cb7b2c71f2a335e3a4fc328'
-                    'bf5beb436012afca590b1a11466e2206')
+    GENESIS_HASH = ('000000002008a2f4a76b850a838ae084'
+                    '994c200dc2fd354f73102298fe063a91')
     PEERS = []
     TX_COUNT = 1
     TX_COUNT_HEIGHT = 1
-    GENESIS_ACTIVATION = 10_000
+    GENESIS_ACTIVATION = 0
+    RPC_PORT = 17443
 
-
-Bitcoin = BitcoinSV
+class Radiant(Coin):
+    NAME = "Radiant"
+    TX_COUNT = 1000
+    TX_COUNT_HEIGHT = 2000
+    TX_PER_BLOCK = 10
+    PEERS = [
+    ]
+    GENESIS_ACTIVATION = 0

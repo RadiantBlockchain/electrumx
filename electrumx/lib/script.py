@@ -1,4 +1,6 @@
+# Copyright (c) 2022 The Radiant Blockchain Developers
 # Copyright (c) 2016-2017, Neil Booth
+# Copyright (c) 2017, the ElectrumX authors
 #
 # All rights reserved.
 #
@@ -24,17 +26,15 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # and warranty status of this software.
 
-'''Script-related classes and functions.'''
 
+'''Script-related classes and functions.'''
 
 from electrumx.lib.enum import Enumeration
 from electrumx.lib.util import unpack_le_uint16_from, unpack_le_uint32_from, \
     pack_le_uint16, pack_le_uint32
 
-
 class ScriptError(Exception):
     '''Exception used for script errors.'''
-
 
 OpCodes = Enumeration("Opcodes", [
     ("OP_0", 0), ("OP_PUSHDATA1", 76),
@@ -61,9 +61,52 @@ OpCodes = Enumeration("Opcodes", [
     "OP_CODESEPARATOR", "OP_CHECKSIG", "OP_CHECKSIGVERIFY", "OP_CHECKMULTISIG",
     "OP_CHECKMULTISIGVERIFY",
     "OP_NOP1",
-    "OP_CHECKLOCKTIMEVERIFY", "OP_CHECKSEQUENCEVERIFY"
-])
+    "OP_CHECKLOCKTIMEVERIFY", "OP_CHECKSEQUENCEVERIFY",
 
+    ("OP_CHECKDATASIG", 186), 
+    ("OP_CHECKDATASIGVERIFY", 187), 
+    ("OP_REVERSEBYTES", 188), 
+    
+    ("OP_STATESEPERATOR", 189), 
+    ("OP_STATESEPERATORINDEX_UTXO", 190), 
+    ("OP_STATESEPERATORINDEX_OUTPUT", 191), 
+
+    ("OP_SHA512_256", 206), 
+    ("OP_HASH512_256", 207),
+    ("OP_PUSHINPUTREF", 208), 
+    ("OP_REQUIREINPUTREF", 209), 
+    ("OP_DISALLOWPUSHINPUTREF", 210),
+    ("OP_DISALLOWPUSHINPUTREFSIBLING", 211),
+
+    ("OP_REFHASHDATASUMMARY_UTXO", 212),
+    ("OP_REFHASHVALUESUM_UTXOS", 213),
+    ("OP_REFHASHDATASUMMARY_OUTPUT", 214),
+    ("OP_REFHASHVALUESUM_OUTPUTS", 215),
+
+    ("OP_PUSHINPUTREFSINGLETON", 216),
+    ("OP_REFTYPE_UTXO", 217),
+    ("OP_REFTYPE_OUTPUT", 218),
+
+    ("OP_REFVALUESUM_UTXOS", 219),
+    ("OP_REFVALUESUM_OUTPUTS", 220),
+    ("OP_REFOUTPUTCOUNT_UTXOS", 221),
+    ("OP_REFOUTPUTCOUNT_OUTPUTS", 222),
+    ("OP_REFOUTPUTCOUNTZEROVALUED_UTXOS", 223),
+    ("OP_REFOUTPUTCOUNTZEROVALUED_OUTPUTS", 224),
+    ("OP_REFDATASUMMARY_UTXO", 225),
+    ("OP_REFDATASUMMARY_OUTPUT", 226),
+
+    ("OP_CODESCRIPTHASHVALUESUM_UTXOS", 227),
+    ("OP_CODESCRIPTHASHVALUESUM_OUTPUTS", 228),
+    ("OP_CODESCRIPTHASHOUTPUTCOUNT_UTXOS", 229),
+    ("OP_CODESCRIPTHASHOUTPUTCOUNT_OUTPUTS", 230),
+    ("OP_CODESCRIPTHASHZEROVALUEDOUTPUTCOUNT_UTXOS", 231),
+    ("OP_CODESCRIPTHASHZEROVALUEDOUTPUTCOUNT_OUTPUTS", 232),
+    ("OP_CODESCRIPTBYTECODE_UTXO", 233),
+    ("OP_CODESCRIPTBYTECODE_OUTPUT", 234),
+    ("OP_STATECRIPTBYTECODE_UTXO", 235),
+    ("OP_STATECRIPTBYTECODE_OUTPUT", 236),
+])
 
 # Paranoia to make it hard to create bad scripts
 assert OpCodes.OP_DUP == 0x76
@@ -73,6 +116,45 @@ assert OpCodes.OP_EQUALVERIFY == 0x88
 assert OpCodes.OP_CHECKSIG == 0xac
 assert OpCodes.OP_CHECKMULTISIG == 0xae
 
+# Added for Radiant
+assert OpCodes.OP_CHECKDATASIG == 0xba
+assert OpCodes.OP_CHECKDATASIGVERIFY == 0xbb
+assert OpCodes.OP_REVERSEBYTES == 0xbc
+assert OpCodes.OP_STATESEPERATOR == 0xbd
+assert OpCodes.OP_STATESEPERATORINDEX_UTXO == 0xbe
+assert OpCodes.OP_STATESEPERATORINDEX_OUTPUT == 0xbf
+
+assert OpCodes.OP_SHA512_256 == 0xce
+assert OpCodes.OP_HASH512_256 == 0xcf
+assert OpCodes.OP_PUSHINPUTREF == 0xd0
+assert OpCodes.OP_REQUIREINPUTREF == 0xd1
+assert OpCodes.OP_DISALLOWPUSHINPUTREF == 0xd2
+assert OpCodes.OP_DISALLOWPUSHINPUTREFSIBLING == 0xd3
+assert OpCodes.OP_REFHASHDATASUMMARY_UTXO == 0xd4
+assert OpCodes.OP_REFHASHVALUESUM_UTXOS == 0xd5
+assert OpCodes.OP_REFHASHDATASUMMARY_OUTPUT == 0xd6
+assert OpCodes.OP_REFHASHVALUESUM_OUTPUTS == 0xd7
+assert OpCodes.OP_PUSHINPUTREFSINGLETON == 0xd8
+assert OpCodes.OP_REFTYPE_UTXO == 0xd9
+assert OpCodes.OP_REFTYPE_OUTPUT == 0xda
+assert OpCodes.OP_REFVALUESUM_UTXOS == 0xdb
+assert OpCodes.OP_REFVALUESUM_OUTPUTS == 0xdc
+assert OpCodes.OP_REFOUTPUTCOUNT_UTXOS == 0xdd
+assert OpCodes.OP_REFOUTPUTCOUNT_OUTPUTS == 0xde
+assert OpCodes.OP_REFOUTPUTCOUNTZEROVALUED_UTXOS == 0xdf
+assert OpCodes.OP_REFOUTPUTCOUNTZEROVALUED_OUTPUTS == 0xe0
+assert OpCodes.OP_REFDATASUMMARY_UTXO == 0xe1
+assert OpCodes.OP_REFDATASUMMARY_OUTPUT == 0xe2
+assert OpCodes.OP_CODESCRIPTHASHVALUESUM_UTXOS == 0xe3
+assert OpCodes.OP_CODESCRIPTHASHVALUESUM_OUTPUTS == 0xe4
+assert OpCodes.OP_CODESCRIPTHASHOUTPUTCOUNT_UTXOS == 0xe5
+assert OpCodes.OP_CODESCRIPTHASHOUTPUTCOUNT_OUTPUTS == 0xe6
+assert OpCodes.OP_CODESCRIPTHASHZEROVALUEDOUTPUTCOUNT_UTXOS == 0xe7
+assert OpCodes.OP_CODESCRIPTHASHZEROVALUEDOUTPUTCOUNT_OUTPUTS == 0xe8
+assert OpCodes.OP_CODESCRIPTBYTECODE_UTXO == 0xe9
+assert OpCodes.OP_CODESCRIPTBYTECODE_OUTPUT == 0xea
+assert OpCodes.OP_STATECRIPTBYTECODE_UTXO == 0xeb
+assert OpCodes.OP_STATECRIPTBYTECODE_OUTPUT == 0xec
 
 def is_unspendable_legacy(script):
     # OP_FALSE OP_RETURN or OP_RETURN
@@ -143,11 +225,14 @@ class Script(object):
                     elif op == OpCodes.OP_PUSHDATA2:
                         dlen, = unpack_le_uint16_from(script[n: n + 2])
                         n += 2
-                    else:
+                    elif op == OpCodes.OP_PUSHDATA4:
                         dlen, = unpack_le_uint32_from(script[n: n + 4])
                         n += 4
+                    elif op == OpCodes.OP_PUSHINPUTREF or op == OpCodes.OP_REQUIREINPUTREF or op == OpCodes.OP_DISALLOWPUSHINPUTREF or op == OpCodes.OP_DISALLOWPUSHINPUTREFSIBLING or op == OpCodes.OP_PUSHINPUTREFSINGLETON:
+                        dlen = 36 # Grab 36 bytes for the hash
                     if n + dlen > len(script):
                         raise IndexError
+
                     op = (op, script[n:n + dlen])
                     n += dlen
 
@@ -158,6 +243,52 @@ class Script(object):
             raise ScriptError('truncated script') from None
 
         return ops
+
+    # Saves the push input refs of a script in the order they were encountered
+    @classmethod
+    def get_push_input_refs(cls, script):
+        push_input_refs = []
+
+        # The unpacks or script[n] below throw on truncated scripts
+        try:
+            n = 0
+            while n < len(script):
+                op = script[n]
+                n += 1
+
+                if op <= OpCodes.OP_PUSHDATA4:
+                    # Raw bytes follow
+                    if op < OpCodes.OP_PUSHDATA1:
+                        dlen = op
+                    elif op == OpCodes.OP_PUSHDATA1:
+                        dlen = script[n]
+                        n += 1
+                    elif op == OpCodes.OP_PUSHDATA2:
+                        dlen, = unpack_le_uint16_from(script[n: n + 2])
+                        n += 2
+                    elif op == OpCodes.OP_PUSHDATA4:
+                        dlen, = unpack_le_uint32_from(script[n: n + 4])
+                        n += 4
+                    if n + dlen > len(script):
+                        raise IndexError
+                
+                    n += dlen 
+                    
+                if op == OpCodes.OP_PUSHINPUTREF or op == OpCodes.OP_REQUIREINPUTREF or op == OpCodes.OP_DISALLOWPUSHINPUTREF or op == OpCodes.OP_DISALLOWPUSHINPUTREFSIBLING or op == OpCodes.OP_PUSHINPUTREFSINGLETON:
+                    dlen = 36 # Grab 36 bytes
+                
+                    if op == OpCodes.OP_PUSHINPUTREF or op == OpCodes.OP_PUSHINPUTREFSINGLETON:
+                        push_input_refs.append(script[n:n + dlen]) 
+
+                    if n + dlen > len(script):
+                        raise IndexError
+
+                    n += dlen  
+
+        except Exception as e:
+            raise ScriptError('get_push_input_refs script') from None
+
+        return push_input_refs
 
     @classmethod
     def push_data(cls, data):

@@ -2,6 +2,16 @@
  ChangeLog
 ===========
 
+Version 1.21.0 (7 Oct 2022)
+============================
+
+* Added support for OP_PUSHINPUTREFSINGLETON and OP_OUTPUTREFVALUESUM
+* Fixed bugs for not parsing added OP codes in version 1.20
+
+Version 1.20.0 (21 Jun 2022)
+============================
+
+* Port for Radiant Blockchain
 
 Version 1.19.0 (11 Jun 2021)
 ============================

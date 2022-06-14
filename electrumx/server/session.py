@@ -24,6 +24,9 @@ from aiorpcx import (
     TaskGroup, handler_invocation, RPCError, Request, sleep, Event, ReplyAndDisconnect,
     timeout_after
 )
+
+# from electrumx.server.httpserver import serve_http
+
 import pylru
 
 import electrumx
@@ -170,7 +173,9 @@ class SessionManager:
                 session_class = self.env.coin.SESSIONCLS
             if service.protocol in ('ws', 'wss'):
                 serve = serve_ws
-            else:
+            # elif service.protocol in ('http', 'https'):
+            #    serve = serve_http
+            else: 
                 serve = serve_rs
             # FIXME: pass the service not the kind
             session_factory = partial(session_class, self, self.db, self.mempool,

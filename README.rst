@@ -1,22 +1,44 @@
-.. image:: https://travis-ci.org/kyuupichan/electrumx.svg?branch=master
-    :target: https://travis-ci.org/kyuupichan/electrumx
-.. image:: https://coveralls.io/repos/github/kyuupichan/electrumx/badge.svg
-    :target: https://coveralls.io/github/kyuupichan/electrumx
+===================================================================================
+ElectrumX - Reimplementation of electrum-server for Radiant Blockchain (RXD) 
+===================================================================================
 
-===============================================
-ElectrumX - Reimplementation of electrum-server
-===============================================
+https://radiantblockchain.org
 
-For a future network with bigger blocks.
+Digital Ownership Revolution.
 
-  :Licence: MIT
+  :Licence: Radiant MIT
   :Language: Python (>= 3.8)
-  :Author: Neil Booth
+  :Author: The Radiant Blockchain Developers
 
 Documentation
 =============
 
 See `readthedocs <https://electrumx.readthedocs.io/>`_.
 
+Misc Troubleshooting
+==============
 
-**Neil Booth**  kyuupichan@gmail.com  https://github.com/kyuupichan
+Problems on OSX 12.0+
+Errors like:
+
+```
+...
+ plyvel/_plyvel.cpp:703:10: fatal error: 'leveldb/db.h' file not found
+      #include "leveldb/db.h"
+               ^~~~~~~~~~~~~~
+
+```
+
+See: https://github.com/wbolster/plyvel/issues/100
+
+```
+export LIBRARY_PATH="$LIBRARY_PATH:$(brew --prefix)/lib"
+export CPATH="$CPATH:$(brew --prefix)/include"
+
+// Now install requirements
+pip install -r requirements.txt 
+
+Install for websockets support: 
+// python3 -m pip install websockets
+
+```

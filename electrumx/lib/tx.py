@@ -1,3 +1,52 @@
+# This license can be used by developers, projects or companies who wish to make their software or applications available for open (free) usage only on the Radiant Blockchains.
+# 
+# Copyright (c) 2022 The Radiant Blockchain Developers
+# 
+# Open Radiant Blockchain (RAD) License Version 1
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#  
+# 1 - The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# 2 - The Software, and any software that is derived from the Software or parts thereof,
+# can only be used on the Radiant (RAD) blockchains. The Radiant (RAD) blockchains are defined,
+# for purposes of this license, as the Radiant (RAD) blockchains containing block height #10,459
+# with the hash "0000000000229980bb7bcf653ebb94d6ffe18fed6cd3a3a98b876312414cb831" and that 
+# contains the longest persistent chain of blocks accepted by this Software, as well as the test 
+# blockchains that contain the longest persistent chains of blocks accepted by this Software.
+# 
+# 3 - The Software, and any software that is derived from the Software or parts thereof, can only
+# be used on Radiant (RAD) blockchain that maintains the original difficulty adjustment algorithm, 
+# maintains the block subsidy emission rate defined in the original version of this Software, and 
+# ensures all coins are spendable in the normal manner without either subverting, undermining, 
+# changing, diminishing, nullifying, hijacking, or altering the way existing coins can be spent. Any 
+# attempt or proposal by an entity to violate, change, or remove the logic for verifying 
+# digital chains of signatures for existing coins will be deemed a violation of this license 
+# and that entity must cease to use the Software immediately.
+# 
+# 4 - Users and providers of the Software agree to insure themselves against any loss of any kind
+# if they wish to mitigate the effects of theft or error. The Users and providers agree
+# and understand that under no circumstances will there be recourse through Radiant (RAD) blockchain
+# providers via subverting, undermining, changing, diminishing, nullifying, hijacking, or altering 
+# the way existing coins can be spent and the proper functioning of the verification of chains of 
+# digital signatures.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+# Previous version of the software are copyright and licensed as follows:
+
 # Copyright (c) 2016-2017, Neil Booth
 # Copyright (c) 2017, the ElectrumX authors
 #
@@ -29,14 +78,14 @@
 
 from collections import namedtuple
 
-from electrumx.lib.hash import double_sha256, hash_to_hex_str
+from electrumx.lib.hash import double_sha256, hash_to_hex_str, sha256
 from electrumx.lib.util import (
     unpack_le_int32_from, unpack_le_int64_from, unpack_le_uint16_from,
     unpack_be_uint16_from,
     unpack_le_uint32_from, unpack_le_uint64_from, pack_le_int32, pack_varint,
-    pack_le_uint32, pack_le_int64, pack_varbytes,
+    pack_le_uint32, pack_le_int64, pack_varbytes, pack_le_uint64
 )
-
+from electrumx.lib.script import Script
 ZERO = bytes(32)
 MINUS_1 = 4294967295
 
@@ -117,7 +166,81 @@ class Deserializer(object):
         we process it in the natural serialized order.
         '''
         start = self.cursor
-        return self.read_tx(), double_sha256(self.binary[start:self.cursor])
+        the_tx = self.read_tx()
+        # If the transaction is version 3, then we use the alternative txid generation scheme
+        if the_tx.version == 3:
+            return the_tx, self.get_transaction_hash_preimage_v3(the_tx)
+        else:
+            return the_tx, double_sha256(self.binary[start:self.cursor])
+
+    # Get the double_sha256 of the transaction preimage used for generating the new txid
+    # The benefits of using version 3 is we can do compressed induction proofs
+    def get_transaction_hash_preimage_v3(self, tx):
+        hashPrevInputs = self.get_hash_prev_inputs(tx)
+        hashSequence = self.get_hash_sequence(tx)
+        hashOutputHashes = self.get_hash_output_hashes(tx)
+        preimage = b''.join((
+            pack_le_uint32(tx.version),
+            pack_le_int32(len(tx.inputs)),
+            hashPrevInputs,
+            hashSequence,
+            pack_le_int32(len(tx.outputs)),
+            hashOutputHashes,
+            pack_le_uint32(tx.locktime)
+        ))
+        h = double_sha256(preimage)
+        print("v3 txid: {}".format(h.hex()))
+        print("v3 pre: {}".format(preimage.hex()))
+        return h
+
+ 
+    def get_hash_prev_inputs(self, tx):
+        inputs = b''
+        for txin in tx.inputs:
+            inputs = b''.join((
+                inputs,
+                txin.prev_hash,
+                pack_le_uint32(txin.prev_idx),
+                double_sha256(txin.script)
+            ))
+        h = double_sha256(inputs)
+        return h
+ 
+    def get_hash_sequence(self, tx):
+        inputs = b''
+        for txin in tx.inputs:
+            inputs = b''.join((
+                inputs,
+                pack_le_uint32(txin.sequence)
+            ))
+        h = double_sha256(inputs)
+        return h
+
+    # Generate the hash of the output hashes
+    def calculate_pushrefs_count_and_hash(self, pk_script):
+        outputs = b''
+        zeroRef = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        push_input_refs = Script.get_push_input_refs(pk_script)
+        if len(push_input_refs) > 0:
+            push_input_refs_hash = double_sha256(b''.join(sorted(push_input_refs)))
+        else:
+            push_input_refs_hash = zeroRef
+        
+        result = b''.join((pack_le_uint32(len(push_input_refs) ), push_input_refs_hash))
+        return result
+
+    # Generate the hash of the output hashes
+    def get_hash_output_hashes(self, tx):
+        outputs = b''
+        for txout in tx.outputs:
+            outputs = b''.join((
+                outputs,
+                pack_le_uint64(txout.value),
+                double_sha256(txout.pk_script),
+                self.calculate_pushrefs_count_and_hash(txout.pk_script),
+            ))
+        h = double_sha256(outputs)
+        return h
 
     def read_tx_and_vsize(self):
         '''Return a (deserialized TX, vsize) pair.'''
