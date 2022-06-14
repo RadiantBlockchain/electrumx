@@ -36,7 +36,7 @@ from decimal import Decimal
 from hashlib import sha256
 
 from electrumx.lib import util
-from electrumx.lib.hash import Base58, double_sha256, hash_to_hex_str
+from electrumx.lib.hash import Base58, double_sha256, double_sha512_256, hash_to_hex_str
 from electrumx.lib.hash import HASHX_LEN
 from electrumx.lib.script import ScriptPubKey
 import electrumx.lib.tx as lib_tx
@@ -68,9 +68,9 @@ class Coin:
     BLOCK_PROCESSOR = block_proc.BlockProcessor
     P2PKH_VERBYTE = bytes.fromhex("00")
     P2SH_VERBYTES = [bytes.fromhex("05")]
-    RPC_PORT = 8332
-    GENESIS_HASH = ('000000000019d6689c085ae165831e93'
-                    '4ff763ae46a2a6c172b3f1b60a8ce26f')
+    RPC_PORT = 7332
+    GENESIS_HASH = ('0000000065d8ed5d8be28d6876b3ffb6'
+                    '60ac2a6c0ca59e437e1f7a6f4e003fb4')
     GENESIS_ACTIVATION = 100_000_000
     # Peer discovery
     PEER_DEFAULT_PORTS = {'t': '50001', 's': '50002'}
@@ -170,7 +170,7 @@ class Coin:
     @classmethod
     def header_hash(cls, header):
         '''Given a header return hash'''
-        return double_sha256(header)
+        return double_sha512_256(header)
 
     @classmethod
     def header_prevhash(cls, header):
@@ -259,5 +259,13 @@ class BitcoinSVRegtest(BitcoinSVTestnet):
     TX_COUNT_HEIGHT = 1
     GENESIS_ACTIVATION = 10_000
 
+class Radiant(Coin):
+    NAME = "Radiant"
+    TX_COUNT = 1000
+    TX_COUNT_HEIGHT = 2000
+    TX_PER_BLOCK = 10
+    PEERS = [
+    ]
+    GENESIS_ACTIVATION = 0
 
 Bitcoin = BitcoinSV

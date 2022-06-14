@@ -1,4 +1,54 @@
+# This license can be used by developers, projects or companies who wish to make their software or applications available for open (free) usage only on the Radiant Blockchains.
+# 
+# Copyright (c) 2022 The Radiant Blockchain Developers
+# 
+# Open Radiant Blockchain (RAD) License Version 1
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#  
+# 1 - The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# 2 - The Software, and any software that is derived from the Software or parts thereof,
+# can only be used on the Radiant (RAD) blockchains. The Radiant (RAD) blockchains are defined,
+# for purposes of this license, as the Radiant (RAD) blockchains containing block height #10,459
+# with the hash "0000000000229980bb7bcf653ebb94d6ffe18fed6cd3a3a98b876312414cb831" and that 
+# contains the longest persistent chain of blocks accepted by this Software, as well as the test 
+# blockchains that contain the longest persistent chains of blocks accepted by this Software.
+# 
+# 3 - The Software, and any software that is derived from the Software or parts thereof, can only
+# be used on Radiant (RAD) blockchain that maintains the original difficulty adjustment algorithm, 
+# maintains the block subsidy emission rate defined in the original version of this Software, and 
+# ensures all coins are spendable in the normal manner without either subverting, undermining, 
+# changing, diminishing, nullifying, hijacking, or altering the way existing coins can be spent. Any 
+# attempt or proposal by an entity to violate, change, or remove the logic for verifying 
+# digital chains of signatures for existing coins will be deemed a violation of this license 
+# and that entity must cease to use the Software immediately.
+# 
+# 4 - Users and providers of the Software agree to insure themselves against any loss of any kind
+# if they wish to mitigate the effects of theft or error. The Users and providers agree
+# and understand that under no circumstances will there be recourse through Radiant (RAD) blockchain
+# providers via subverting, undermining, changing, diminishing, nullifying, hijacking, or altering 
+# the way existing coins can be spent and the proper functioning of the verification of chains of 
+# digital signatures.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+# Previous version of the software are copyright and licensed as follows:
+
 # Copyright (c) 2016-2017, Neil Booth
+# Copyright (c) 2017, the ElectrumX authors
 #
 # All rights reserved.
 #
@@ -24,17 +74,15 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # and warranty status of this software.
 
-'''Script-related classes and functions.'''
 
+'''Script-related classes and functions.'''
 
 from electrumx.lib.enum import Enumeration
 from electrumx.lib.util import unpack_le_uint16_from, unpack_le_uint32_from, \
     pack_le_uint16, pack_le_uint32
 
-
 class ScriptError(Exception):
     '''Exception used for script errors.'''
-
 
 OpCodes = Enumeration("Opcodes", [
     ("OP_0", 0), ("OP_PUSHDATA1", 76),
@@ -61,9 +109,10 @@ OpCodes = Enumeration("Opcodes", [
     "OP_CODESEPARATOR", "OP_CHECKSIG", "OP_CHECKSIGVERIFY", "OP_CHECKMULTISIG",
     "OP_CHECKMULTISIGVERIFY",
     "OP_NOP1",
-    "OP_CHECKLOCKTIMEVERIFY", "OP_CHECKSEQUENCEVERIFY"
+    "OP_CHECKLOCKTIMEVERIFY", "OP_CHECKSEQUENCEVERIFY",
+    ("OP_SHA512_256", 206), ("OP_HASH512_256", 207),
+    ("OP_PUSHINPUTREF", 208), ("OP_REQUIREINPUTREF", 209), ("OP_DISALLOWPUSHINPUTREF", 210)
 ])
-
 
 # Paranoia to make it hard to create bad scripts
 assert OpCodes.OP_DUP == 0x76
@@ -73,6 +122,12 @@ assert OpCodes.OP_EQUALVERIFY == 0x88
 assert OpCodes.OP_CHECKSIG == 0xac
 assert OpCodes.OP_CHECKMULTISIG == 0xae
 
+# Added for Radiant
+assert OpCodes.OP_SHA512_256 == 0xce
+assert OpCodes.OP_HASH512_256 == 0xcf
+assert OpCodes.OP_PUSHINPUTREF == 0xd0
+assert OpCodes.OP_REQUIREINPUTREF == 0xd1
+assert OpCodes.OP_DISALLOWPUSHINPUTREF == 0xd2
 
 def is_unspendable_legacy(script):
     # OP_FALSE OP_RETURN or OP_RETURN
@@ -143,11 +198,14 @@ class Script(object):
                     elif op == OpCodes.OP_PUSHDATA2:
                         dlen, = unpack_le_uint16_from(script[n: n + 2])
                         n += 2
-                    else:
+                    elif op == OpCodes.OP_PUSHDATA4:
                         dlen, = unpack_le_uint32_from(script[n: n + 4])
                         n += 4
+                    elif op == OpCodes.OP_PUSHINPUTREF or op == OpCodes.OP_REQUIREINPUTREF or op == OpCodes.OP_DISALLOWPUSHINPUTREF:
+                        dlen = 36 # Grab 36 bytes for the hash
                     if n + dlen > len(script):
                         raise IndexError
+
                     op = (op, script[n:n + dlen])
                     n += dlen
 
@@ -158,6 +216,52 @@ class Script(object):
             raise ScriptError('truncated script') from None
 
         return ops
+
+    # Saves the push input refs of a script in the order they were encountered
+    @classmethod
+    def get_push_input_refs(cls, script):
+        push_input_refs = []
+
+        # The unpacks or script[n] below throw on truncated scripts
+        try:
+            n = 0
+            while n < len(script):
+                op = script[n]
+                n += 1
+
+                if op <= OpCodes.OP_PUSHDATA4:
+                    # Raw bytes follow
+                    if op < OpCodes.OP_PUSHDATA1:
+                        dlen = op
+                    elif op == OpCodes.OP_PUSHDATA1:
+                        dlen = script[n]
+                        n += 1
+                    elif op == OpCodes.OP_PUSHDATA2:
+                        dlen, = unpack_le_uint16_from(script[n: n + 2])
+                        n += 2
+                    elif op == OpCodes.OP_PUSHDATA4:
+                        dlen, = unpack_le_uint32_from(script[n: n + 4])
+                        n += 4
+                    if n + dlen > len(script):
+                        raise IndexError
+                
+                    n += dlen 
+                    
+                if op == OpCodes.OP_PUSHINPUTREF or op == OpCodes.OP_REQUIREINPUTREF or op == OpCodes.OP_DISALLOWPUSHINPUTREF:
+                    dlen = 36 # Grab 36 bytes
+                
+                    if op == OpCodes.OP_PUSHINPUTREF:
+                        push_input_refs.append(script[n:n + dlen]) 
+
+                    if n + dlen > len(script):
+                        raise IndexError
+
+                    n += dlen  
+
+        except Exception as e:
+            raise ScriptError('get_push_input_refs script') from None
+
+        return push_input_refs
 
     @classmethod
     def push_data(cls, data):
