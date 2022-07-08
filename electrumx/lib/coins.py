@@ -223,7 +223,7 @@ class RadiantTestnet(RadiantTestnetMixin, Coin):
     '''Radiant Testnet for Radiant daemons.'''
     GENESIS_HASH = ('000000002008a2f4a76b850a838ae084'
                     '994c200dc2fd354f73102298fe063a91')
-    NAME = "Radiant"
+    NAME = "RadiantTestnet"
     PEERS = [
     ]
     GENESIS_ACTIVATION = 0
@@ -233,7 +233,7 @@ class RadiantTestnet4(RadiantTestnetMixin, Coin):
     '''Radiant Testnet4 for Radiant daemons.'''
     GENESIS_HASH = ('000000000d8ada264d16f87a590b2af3'
                     '20cd3c7e3f9be5482163e830fd00aca2')
-    NAME = "Radiant"
+    NAME = "RadiantTestnet4"
     PEERS = [
     ]
     GENESIS_ACTIVATION = 0
