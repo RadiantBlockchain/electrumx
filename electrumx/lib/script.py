@@ -110,8 +110,12 @@ OpCodes = Enumeration("Opcodes", [
     "OP_CHECKMULTISIGVERIFY",
     "OP_NOP1",
     "OP_CHECKLOCKTIMEVERIFY", "OP_CHECKSEQUENCEVERIFY",
-    ("OP_SHA512_256", 206), ("OP_HASH512_256", 207),
-    ("OP_PUSHINPUTREF", 208), ("OP_REQUIREINPUTREF", 209), ("OP_DISALLOWPUSHINPUTREF", 210)
+    ("OP_SHA512_256", 206), 
+    ("OP_HASH512_256", 207),
+    ("OP_PUSHINPUTREF", 208), 
+    ("OP_REQUIREINPUTREF", 209), 
+    ("OP_DISALLOWPUSHINPUTREF", 210),
+    ("OP_DISALLOWPUSHINPUTREFSIBLING", 211)
 ])
 
 # Paranoia to make it hard to create bad scripts
@@ -128,6 +132,7 @@ assert OpCodes.OP_HASH512_256 == 0xcf
 assert OpCodes.OP_PUSHINPUTREF == 0xd0
 assert OpCodes.OP_REQUIREINPUTREF == 0xd1
 assert OpCodes.OP_DISALLOWPUSHINPUTREF == 0xd2
+assert OpCodes.OP_DISALLOWPUSHINPUTREFSIBLING == 0xd3
 
 def is_unspendable_legacy(script):
     # OP_FALSE OP_RETURN or OP_RETURN
@@ -201,7 +206,7 @@ class Script(object):
                     elif op == OpCodes.OP_PUSHDATA4:
                         dlen, = unpack_le_uint32_from(script[n: n + 4])
                         n += 4
-                    elif op == OpCodes.OP_PUSHINPUTREF or op == OpCodes.OP_REQUIREINPUTREF or op == OpCodes.OP_DISALLOWPUSHINPUTREF:
+                    elif op == OpCodes.OP_PUSHINPUTREF or op == OpCodes.OP_REQUIREINPUTREF or op == OpCodes.OP_DISALLOWPUSHINPUTREF or op == OpCodes.OP_DISALLOWPUSHINPUTREFSIBLING:
                         dlen = 36 # Grab 36 bytes for the hash
                     if n + dlen > len(script):
                         raise IndexError
@@ -247,7 +252,7 @@ class Script(object):
                 
                     n += dlen 
                     
-                if op == OpCodes.OP_PUSHINPUTREF or op == OpCodes.OP_REQUIREINPUTREF or op == OpCodes.OP_DISALLOWPUSHINPUTREF:
+                if op == OpCodes.OP_PUSHINPUTREF or op == OpCodes.OP_REQUIREINPUTREF or op == OpCodes.OP_DISALLOWPUSHINPUTREF or op == OpCodes.OP_DISALLOWPUSHINPUTREFSIBLING:
                     dlen = 36 # Grab 36 bytes
                 
                     if op == OpCodes.OP_PUSHINPUTREF:
