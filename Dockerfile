@@ -1,7 +1,8 @@
 # The Radiant Blockchain Developers
-# The purpose of this image is to be able to host ElectrumX for radiantd (RADN)
-# Build with: `docker build .`
+# The purpose of this image is to be able to host ElectrumX for radiantd (RXD)
+# Build with: `docker build -t electrumx .`
 # Public images at: https://hub.docker.com/repository/docker/radiantblockchain
+
 FROM ubuntu:20.04
 
 LABEL maintainer="radiantblockchain@protonmail.com"
