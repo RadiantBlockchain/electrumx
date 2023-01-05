@@ -59,16 +59,27 @@ ENV DB_DIRECTORY=/root/electrumdb
 ENV DB_ENGINE=leveldb
 
 # SSL VERSION
-#ENV SERVICES=tcp://0.0.0.0:50010,ws://0.0.0.0:50020,wss://0.0.0.0:50022
+ENV SERVICES=tcp://0.0.0.0:50010,SSL://0.0.0.0:50012
+ENV SSL_CERTFILE=/root/electrumdb/server.crt
+ENV SSL_KEYFILE=/root/electrumdb/server.key
 # NO SSL VERSION
-ENV SERVICES=tcp://0.0.0.0:50010
+#ENV SERVICES=tcp://0.0.0.0:50010
 ENV HOST=""
 ENV ALLOW_ROOT=true
-ENV CACHE_MB=300
+ENV CACHE_MB=10000
+ENV MAX_SESSIONS=10000
 ENV MAX_SEND=10000000
 ENV MAX_RECV=10000000
 
-EXPOSE 50010
+# Create SSL
+WORKDIR /root/electrumdb
+RUN openssl genrsa -out server.key 2048
+RUN openssl req -new -key server.key -out server.csr -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=radiantblockchain.org"
+RUN openssl x509 -req -days 1825 -in server.csr -signkey server.key -out server.crt
+
+WORKDIR /root/electrumx
+
+EXPOSE 50010 50012
 
 ENTRYPOINT ["python3", "electrumx_server"]
 
