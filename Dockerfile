@@ -77,6 +77,8 @@ RUN openssl genrsa -out server.key 2048
 RUN openssl req -new -key server.key -out server.csr -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=radiantblockchain.org"
 RUN openssl x509 -req -days 1825 -in server.csr -signkey server.key -out server.crt
 
+WORKDIR /root/electrumx
+
 EXPOSE 50010 50012
 
 ENTRYPOINT ["python3", "electrumx_server"]
