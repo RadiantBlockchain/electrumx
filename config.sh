@@ -14,9 +14,9 @@
 export DAEMON_URL=http://raduser:radpass@localhost:7332/
 export COIN=Radiant
 export REQUEST_TIMEOUT=60
-export DB_DIRECTORY=/Users/youruser/git/electrumdb
+export DB_DIRECTORY=/Users/username/git/electrumdb
 export DB_ENGINE=leveldb
-export SERVICES=tcp://0.0.0.0:50010,ws://0.0.0.0:50020,wss://0.0.0.0:50022
+export SERVICES=tcp://0.0.0.0:50010,ws://0.0.0.0:50020 #,wss://0.0.0.0:50022
 export HOST=""
 export ALLOW_ROOT=true
 export CACHE_MB=300

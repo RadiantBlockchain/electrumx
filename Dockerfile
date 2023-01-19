@@ -3,7 +3,7 @@
 # Build with: `docker build -t electrumx .`
 # Public images at: https://hub.docker.com/repository/docker/radiantblockchain
 
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 LABEL maintainer="radiantblockchain@protonmail.com"
 LABEL version="1.2.0"
@@ -32,6 +32,8 @@ ENV PACKAGES="\
   cmake \
   python3 \
   python3-pip \
+  python3-dev \
+  libleveldb-dev \
 "
 # Note can remove the opencl and ocl packages above when not building on a system for GPU/mining
 # Included only for reference purposes if this container would be used for mining as well.
