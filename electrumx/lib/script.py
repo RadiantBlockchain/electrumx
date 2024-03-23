@@ -104,11 +104,13 @@ OpCodes = Enumeration("Opcodes", [
     ("OP_CODESCRIPTHASHZEROVALUEDOUTPUTCOUNT_OUTPUTS", 232),
     ("OP_CODESCRIPTBYTECODE_UTXO", 233),
     ("OP_CODESCRIPTBYTECODE_OUTPUT", 234),
-    ("OP_STATECRIPTBYTECODE_UTXO", 235),
-    ("OP_STATECRIPTBYTECODE_OUTPUT", 236),
+    ("OP_STATESCRIPTBYTECODE_UTXO", 235),
+    ("OP_STATESCRIPTBYTECODE_OUTPUT", 236),
+    ("OP_PUSH_TX_STATE", 237)
 ])
 
-# Paranoia to make it hard to create bad scripts
+# Paranoia to
+#  make it hard to create bad scripts
 assert OpCodes.OP_DUP == 0x76
 assert OpCodes.OP_HASH160 == 0xa9
 assert OpCodes.OP_EQUAL == 0x87
